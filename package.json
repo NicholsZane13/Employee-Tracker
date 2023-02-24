@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "console.table": "^0.10.0",
+    "dotenv": "^16.0.3",
+    "mysql2": "^2.3.3",
+    "nodemon": "^2.0.20",
+    "inquirer": "^9.1.4"
+  },
+  "name": "employee-tracker",
+  "description": "Management system that uses SQL database to update data",
+  "version": "1.0.0",
+  "main": "main.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NicholsZane13/Employee-Tracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NicholsZane13/Employee-Tracker/issues"
+  },
+  "homepage": "https://github.com/NicholsZane13/Employee-Tracker#readme"
+}
