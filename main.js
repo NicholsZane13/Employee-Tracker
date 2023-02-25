@@ -1,29 +1,29 @@
-const inquirer = require('inquirer');
-const quest = require('./questions/promptQuestions');
 const db = require('./config/connection');
 const cTable = require('console.table');
 const { type } = require('os');
+const inquirer = require('inquirer');
+const quest = require('./questions/promptQuestions');
 require('dotenv').config();
 
 //Prompts question
-const firstPrompt = () => {
+const promptFirstQ = () => {
   inquirer.prompt([quest.whatToDoQuestions]).then((data) => {
     if (data.option === 'Add a role') {
-      getDepartment();
+      grabDepartment();
     } else if (data.option === 'View all departments') {
-      viewDepartments();
+      showDepartments();
     } else if (data.option === 'View all roles') {
-      viewRoles();
+      showRoles();
     } else if (data.option === 'Add a department') {
       addDepartment();
     } else if (data.option === 'View all employees') {
-      viewEmployees();
+      showEmployees();
     } else if (data.option === 'Add an employee') {
-      getManager();
-      getDataForEmployee();
+      grabManager();
+      grabDataEmployee();
     } else if (data.option === 'Update an employee role') {
-      getRole();
-      getEmployee();
+      grabRole();
+      grabEmployee();
     }
   });
 };
@@ -32,65 +32,22 @@ let managerOfEmployee;
 let role;
 
 //query that get data from the database
-const getManager = () => {
-  db.query('SELECT * FROM employee', async function (err, res) {
-    managerOfEmployee = res.map((name) => name.first_name);
-  });
-};
 
-const getEmployee = () => {
-  db.query('SELECT * FROM employee', async function (err, res) {
-    updateEmployeeRole(res);
-  });
-};
-
-const getRole = () => {
+const grabRole = () => {
   db.query('SELECT * FROM role', async function (err, res) {
     role = res.map((roleTitle) => roleTitle.title);
   });
 };
 
-//Update employee prompts
-const updateEmployeeRole = (empName) => {
-  inquirer
-    .prompt([
-      {
-        type: 'list',
-        name: 'nameOfEmployee',
-        message: 'What employee would you like to update?',
-        choices: empName.map((name) => name.first_name),
-      },
-      {
-        type: 'list',
-        name: 'roleName',
-        message: 'Select a new role for this employee',
-        choices: role,
-      },
-    ])
-    .then((data) => {
-      db.query(
-        'SELECT * FROM role WHERE title = ?',
-        [data.roleName],
-        async function (err, res) {
-          let roleT = res[0].id;
-          db.query('UPDATE employee SET role_id = ? WHERE first_name = ? ', [
-            roleT,
-            data.nameOfEmployee,
-          ]);
-        }
-      );
-      console.log('Employee Updated!');
-      firstPrompt();
-    });
+const grabEmployee = () => {
+  db.query('SELECT * FROM employee', async function (err, res) {
+    updateRoleEmployee(res);
+  });
 };
-const getDataForEmployee = () => {
-  db.query('SELECT * FROM role', async function (err, res) {
-    try {
-      const roleData = await res.map((title) => title.title);
-      addEmployee(roleData);
-    } catch (err) {
-      console.log(err);
-    }
+
+const grabManager = () => {
+  db.query('SELECT * FROM employee', async function (err, res) {
+    managerOfEmployee = res.map((name) => name.first_name);
   });
 };
 
@@ -139,32 +96,48 @@ const addEmployee = (titleRole) => {
           );
         }
       );
-      firstPrompt();
+      promptFirstQ();
     });
 };
 
-//Query for viewing all employees
-const viewEmployees = () => {
-  db.query(
-    `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
-    FROM employee
-    LEFT JOIN employee manager on manager.id = employee.manager_id
-    INNER JOIN role ON (role.id = employee.role_id)
-    INNER JOIN department ON (department.id = role.department_id)
-    ORDER BY employee.id;`,
-    async function (err, result) {
-      console.table(result);
-      firstPrompt();
-    }
-  );
+//Update employee prompts
+const updateRoleEmployee = (empName) => {
+  inquirer
+    .prompt([
+      {
+        type: 'list',
+        name: 'nameOfEmployee',
+        message: 'What employee would you like to update?',
+        choices: empName.map((name) => name.first_name),
+      },
+      {
+        type: 'list',
+        name: 'roleName',
+        message: 'Select a new role for this employee',
+        choices: role,
+      },
+    ])
+    .then((data) => {
+      db.query(
+        'SELECT * FROM role WHERE title = ?',
+        [data.roleName],
+        async function (err, res) {
+          let roleT = res[0].id;
+          db.query('UPDATE employee SET role_id = ? WHERE first_name = ? ', [
+            roleT,
+            data.nameOfEmployee,
+          ]);
+        }
+      );
+      console.log('Employee Updated!');
+      promptFirstQ();
+    });
 };
-
-//Query for viewing all departments
-const viewDepartments = () => {
-  db.query('SELECT * FROM department', async function (err, results) {
+const grabDataEmployee = () => {
+  db.query('SELECT * FROM role', async function (err, res) {
     try {
-      console.table(results);
-      firstPrompt();
+      const roleData = await res.map((title) => title.title);
+      addEmployee(roleData);
     } catch (err) {
       console.log(err);
     }
@@ -179,7 +152,7 @@ const addDepartment = () => {
       async function () {
         try {
           console.log('Added new department!');
-          firstPrompt();
+          promptFirstQ();
         } catch (err) {
           console.log(err);
         }
@@ -188,13 +161,41 @@ const addDepartment = () => {
   });
 };
 
-const viewRoles = () => {
+//Query for viewing all employees
+const showEmployees = () => {
+  db.query(
+    `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    FROM employee
+    LEFT JOIN employee manager on manager.id = employee.manager_id
+    INNER JOIN role ON (role.id = employee.role_id)
+    INNER JOIN department ON (department.id = role.department_id)
+    ORDER BY employee.id;`,
+    async function (err, result) {
+      console.table(result);
+      promptFirstQ();
+    }
+  );
+};
+
+//Query for viewing all departments
+const showDepartments = () => {
+  db.query('SELECT * FROM department', async function (err, results) {
+    try {
+      console.table(results);
+      promptFirstQ();
+    } catch (err) {
+      console.log(err);
+    }
+  });
+};
+
+const showRoles = () => {
   db.query(
     `SELECT role.title as 'Role Title', role.id as 'Role ID', department.name as 'Department Name', role.salary as 'Salary' FROM role JOIN department ON role.department_id = department.id;`,
     async function (err, results) {
       try {
         console.table(results);
-        firstPrompt();
+        promptFirstQ();
       } catch (err) {
         console.log(err);
       }
@@ -202,7 +203,7 @@ const viewRoles = () => {
   );
 };
 
-const getDepartment = () => {
+const grabDepartment = () => {
   db.query('SELECT * FROM department', async function (err, result) {
     try {
       rolePrompts(result);
@@ -247,7 +248,7 @@ const rolePrompts = (depName) => {
                 return;
               }
               console.log(`${data.roleName} added\n`);
-              firstPrompt();
+              promptFirstQ();
             }
           );
         }
@@ -255,4 +256,4 @@ const rolePrompts = (depName) => {
     });
 };
 
-firstPrompt();
+promptFirstQ();
